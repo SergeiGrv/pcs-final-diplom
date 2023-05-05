@@ -13,8 +13,6 @@ public class BooleanSearchEngine implements SearchEngine {
     Map<String, Integer> freqs;
 
     public BooleanSearchEngine(File pdfsDir) throws IOException {
-        // прочтите тут все pdf и сохраните нужные данные,
-        // тк во время поиска сервер не должен уже читать файлы
         for (File item : Objects.requireNonNull(pdfsDir.listFiles())) {
             PdfDocument doc = new PdfDocument(new PdfReader(item));
             int pages = doc.getNumberOfPages();
@@ -31,7 +29,6 @@ public class BooleanSearchEngine implements SearchEngine {
                     word = word.toLowerCase();
                     freqs.put(word, freqs.getOrDefault(word, 0) + 1);
                 }
-               // System.out.println(freqs);
                 for (Map.Entry<String, Integer> rslts : freqs.entrySet()) {
                     pageEntry = new ArrayList<>();
                     if (!map.containsKey(rslts.getKey())) {
@@ -48,10 +45,11 @@ public class BooleanSearchEngine implements SearchEngine {
 
     @Override
     public List<PageEntry> search(String word) {
-        // тут реализуйте поиск по слову
         for (Map.Entry<String, List<PageEntry>> srch : map.entrySet()) {
             if (srch.getKey().equals(word)) {
-                return srch.getValue();
+                List<PageEntry> entryList = Arrays.asList(srch.getValue().toArray(new PageEntry[0]));
+                Collections.sort(entryList);
+                return entryList;
             }
         }
         return Collections.emptyList();
