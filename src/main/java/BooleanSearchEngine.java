@@ -8,9 +8,7 @@ import java.io.IOException;
 import java.util.*;
 
 public class BooleanSearchEngine implements SearchEngine {
-    Map<String, List<PageEntry>> map = new HashMap<>();
-    List<PageEntry> pageEntry;
-    Map<String, Integer> freqs;
+    private final Map<String, List<PageEntry>> map = new HashMap<>();
 
     public BooleanSearchEngine(File pdfsDir) throws IOException {
         for (File item : Objects.requireNonNull(pdfsDir.listFiles())) {
@@ -21,7 +19,7 @@ public class BooleanSearchEngine implements SearchEngine {
                 int page = doc.getPageNumber(pdfPage);
                 String text = PdfTextExtractor.getTextFromPage(pdfPage);
                 String[] words = text.split("\\P{IsAlphabetic}+");
-                freqs = new HashMap<>();
+                Map<String, Integer> freqs = new HashMap<>();
                 for (String word : words) {
                     if (word.isEmpty()) {
                         continue;
@@ -29,8 +27,9 @@ public class BooleanSearchEngine implements SearchEngine {
                     word = word.toLowerCase();
                     freqs.put(word, freqs.getOrDefault(word, 0) + 1);
                 }
+
                 for (Map.Entry<String, Integer> rslts : freqs.entrySet()) {
-                    pageEntry = new ArrayList<>();
+                    List<PageEntry> pageEntry = new ArrayList<>();
                     if (!map.containsKey(rslts.getKey())) {
                         PageEntry entry = new PageEntry(item.getName(), page, rslts.getValue());
                         pageEntry.add(entry);
@@ -39,19 +38,21 @@ public class BooleanSearchEngine implements SearchEngine {
                         map.get(rslts.getKey()).add(new PageEntry(item.getName(), page, rslts.getValue()));
                     }
                 }
+                for (Map.Entry<String, List<PageEntry>> srch : map.entrySet()) {
+                    List<PageEntry> compareList = srch.getValue();
+                    Collections.sort(compareList);
+                    map.put(srch.getKey(), compareList);
+                }
             }
         }
     }
 
     @Override
     public List<PageEntry> search(String word) {
-        for (Map.Entry<String, List<PageEntry>> srch : map.entrySet()) {
-            if (srch.getKey().equals(word)) {
-                List<PageEntry> entryList = Arrays.asList(srch.getValue().toArray(new PageEntry[0]));
-                Collections.sort(entryList);
-                return entryList;
-            }
+        if (map.containsKey(word)) {
+            return map.get(word);
         }
-        return Collections.emptyList();
+
+        return new ArrayList<>();
     }
 }
